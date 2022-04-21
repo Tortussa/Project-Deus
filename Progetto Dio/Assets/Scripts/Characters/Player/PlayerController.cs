@@ -9,15 +9,19 @@ public class PlayerController : MonoBehaviour
     private Player player;
 
     [HideInInspector] public CharacterController cc;
-    
+
+    [Header("Camera")]
+    public GameObject cameraHolder;
+    public float cameraSpeed;
+
     [Header("Movement")]
-    public Vector3 moveInput;
+    [HideInInspector] public Vector3 moveInput;
     public float speed;
 
     [Header("Gravity")]
     public float gravity = -9.81f;
     public LayerMask floorMask;
-    public Vector3 groundSpherePosition;
+    public float groundSphereY;
     public float groundSphereRadius;
     public bool isGrounded;
     private Vector3 velocity;
@@ -32,18 +36,26 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        isGrounded=CheckGravity(); //Calls checksphere each frame, do it better
         GatherInput();
     }
 
     void GatherInput()
     {
         moveInput = GetMoveInput();
+        cameraHolder.transform.Rotate(new Vector3(0,CameraInput(),0)*Time.deltaTime*cameraSpeed);
+        transform.LookAt(cameraHolder.transform);
         Move();
     }
     Vector3 GetMoveInput()
     {
-        return new Vector3(player.GetAxis("XAxis"),0,player.GetAxis("YAxis"));
+        float horizontalAxis = player.GetAxis("XAxis");
+        float verticalAxis = player.GetAxis("YAxis");
+        Vector3 forward = cameraHolder.transform.forward;
+        Vector3 right = cameraHolder.transform.right;
+        forward.Normalize();
+        right.Normalize();
+        return forward * verticalAxis + right * horizontalAxis;
+        
     }
     void Move()
     {
@@ -55,14 +67,15 @@ public class PlayerController : MonoBehaviour
         cc.Move(velocity*Time.deltaTime);
         if (isGrounded) velocity.y = -2;
     }
-    bool CheckGravity()
+
+    public float CameraInput()
     {
-        if (Physics.CheckSphere(transform.position + groundSpherePosition, groundSphereRadius, floorMask)) return true;
-        return false;
+        Debug.Log(player.GetAxis("MoveCameraX"));
+        return player.GetAxis("MoveCameraX");
     }
+
+
     private void OnDrawGizmos()
     {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position+groundSpherePosition, groundSphereRadius);
     }
 }
